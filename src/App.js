@@ -6,8 +6,8 @@ function App() {
   return (
     <>
       <div>
-        {/* <ReactQuery /> */}
-        <PostReactQuery />
+        <ReactQuery />
+        {/* <PostReactQuery /> */}
       </div>
     </>
   );

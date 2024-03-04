@@ -1,12 +1,48 @@
+// import { useQuery } from "react-query";
+// import React from "react";
+// import { getFetchData } from "../axiosConfig";
+
+// const ReactQuery = () => {
+//   const { data, isLoading, error } = useQuery("myQueryKey", () =>
+//     getFetchData("https://jsonplaceholder.typicode.com/posts")
+//   );
+
+//   if (isLoading) {
+//     return <p>Loading...</p>;
+//   }
+
+//   if (error) {
+//     return <p>Error: {error.message}</p>;
+//   }
+
+//   return (
+//     <div>
+//       {data?.map((item, index) => (
+//         <div key={index}>
+//           <div>{item.id}</div>
+//           <div>{item.title}</div>
+//           <div>{item.body}</div>
+//         </div>
+//       ))}
+//     </div>
+//   );
+// };
+
+// export default ReactQuery;
 import { useQuery } from "react-query";
 import React from "react";
-import { getFetchData } from "../axiosConfig"; // Adjust the path based on your project structure
+import { useGetRequest } from "../axiosConfig";
+import { useEffect } from "react";
 
 const ReactQuery = () => {
-  const { data, isLoading, error } = useQuery("myQueryKey", () =>
-    getFetchData("https://jsonplaceholder.typicode.com/posts")
+  const { refetch, data, isLoading, error } = useGetRequest(
+    "queryKey",
+    "https://jsonplaceholder.typicode.com/posts"
   );
 
+  useEffect(() => {
+    refetch();
+  }, []);
   if (isLoading) {
     return <p>Loading...</p>;
   }
