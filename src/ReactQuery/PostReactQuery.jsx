@@ -21,7 +21,6 @@
 //     mutate();
 //   }, [mutate]);
 
-
 //   if (isLoading) {
 //     return <p>Loading...</p>;
 //   }
@@ -39,23 +38,29 @@
 
 // export default PostReactQuery;
 import React, { useEffect } from "react";
-import {  usePostRequest } from "../axiosConfig";
+import { usePostRequest } from "../axiosConfig";
 
 const PostReactQuery = () => {
   const payload = {
     title: "react query",
     body: "this is the payload body ......................",
     userId: 1,
+    id: 101,
   };
-  const { mutateAsync, isLoading, isError, isSuccess, error } = usePostRequest(
-    "yourQueryKey",
+
+  const { mutate, isLoading, isError, isSuccess, error, data } = usePostRequest(
     "https://jsonplaceholder.typicode.com/posts"
   );
-
   useEffect(() => {
-    mutateAsync(payload)
-      .then(() => {})
-      .catch(() => {});
+    // mutateAsync(payload);
+    mutate(payload, {
+      onSuccess: (res) => {
+        console.log("res", res);
+      },
+      onError: (err) => {
+        console.log(`Error: ${err.message}`);
+      },
+    });
   }, []);
 
   return (

@@ -1,16 +1,4 @@
-// import axios from "axios";
-// import { useQuery, useMutation } from 'react-query';
-
-// export const getFetchData = async (URL) => {
-//   const response = await axios.get(URL);
-//   return response.data;
-// };
-// export const postFetchData = async (URL, payload) => {
-//   const response = await axios.post(URL, payload);
-//   return response.data;
-// };
-
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation, useQueryClient } from "react-query";
 import axios from "axios";
 
 const baseURL = process.env.REACT_APP_BASE_URL;
@@ -42,61 +30,107 @@ axiosInstance.interceptors.response.use(
   },
   function (error) {
     if (error.response && error.response.status === 401) {
-      
-      localStorage.removeItem("token"); 
-      window.location.href = "/login"; 
+      localStorage.removeItem("token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
 );
 
 // Custom hook for GET requests
-export function useGetRequest(queryKey, URL) {
-  return useQuery(queryKey, async () => {
-    const response = await axiosInstance.get(URL);
-    return response.data;
-  });
-}
+export const useGetRequest = (url, options = {}) => {
+  return useQuery(
+    [url],
+    () => axiosInstance.get(url).then((res) => res.data),
+    options
+  );
+};
 
 // Custom hook for POST requests
-export function usePostRequest(queryKey, URL) {
-  return useMutation(async (payload) => {
-    const response = await axiosInstance.post(URL, payload);
-    return response.data;
-  });
-}
-
-// Custom hook for POST requests with FormData
-export function usePostRequestFormData(queryKey, URL) {
-  return useMutation(async (payload) => {
-    const formData = new FormData();
-    for (const key in payload) {
-      if (payload[key] instanceof Array) {
-        payload[key].forEach((file) => {
-          formData.append(key, file);
-        });
-      } else formData.append(key, payload[key]);
-    }
-    const response = await axiosInstance.post(URL, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
+export const usePostRequest = (url, options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => axiosInstance.post(url, payload).then((res) => res.data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries([url]);
       },
-    });
-    return response.data;
-  });
-}
+      ...options,
+    }
+  );
+};
 
-// Custom hook for PATCH requests
-export function usePatchRequest(queryKey, URL) {
-  return useMutation(async (payload) => {
-    const response = await axiosInstance.patch(URL, payload);
-    return response.data;
-  });
-}
+export const usePostRequestFormData = (url, options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => {
+      const formData = new FormData();
+      for (const key in payload) {
+        if (payload[key] instanceof Array) {
+          payload[key].forEach((file) => {
+            formData.append(key, file);
+          });
+        } else formData.append(key, payload[key]);
+      }
+      return axiosInstance
+        .post(url, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((res) => res.data);
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries([url]);
+      },
+      ...options,
+    }
+  );
+};
 
-// Custom hook for DELETE requests
-export function useDeleteRequest(queryKey, URL) {
-  return useMutation(async () => {
-    await axiosInstance.delete(URL);
+export const usePatchRequest = (url, options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation(
+    (payload) => axiosInstance.patch(url, payload).then((res) => res.data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries([url]);
+      },
+      ...options,
+    }
+  );
+};
+
+export const useDeleteRequest = (url, options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation(() => axiosInstance.delete(url).then((res) => res.data), {
+    onSuccess: () => {
+      queryClient.invalidateQueries([url]);
+    },
+    ...options,
   });
-}
+};
+
+export const useInfiniteQuery = (url, options = {}) => {
+  return useQuery(
+    url,
+    async ({ pageParam = 1 }) => {
+      const response = await axiosInstance.get(url, {
+        params: {
+          page: pageParam,
+        },
+      });
+      return response.data;
+    },
+    {
+      getNextPageParam: (lastPage, pages) => {
+        if (lastPage.hasNextPage) {
+          return pages.length + 1;
+        }
+        return undefined;
+      },
+      ...options,
+    }
+  );
+};
